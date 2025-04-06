@@ -1,19 +1,26 @@
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { collection, addDoc } from 'firebase/firestore'
+import { db } from "@/firebase"
 
 export default function AddTaskScreen() {
   const [task, setTask] = useState('');
   const router = useRouter();
 
-  const handleAddTask = () => {
+  const handleAddTask = async() => {
     if (task.trim() === '') return;
+    try {
+      await addDoc(collection(db, 'todos'), {
+        title: task,
+        createdAt: new Date()
+      });
 
-    console.log('New Task:', task);
-    // Later we'll upload this to Firestore 🔥
-
-    setTask('');
-    router.back(); // go back to Home after adding
+      console.log('Task added!');
+      router.push('/'); // Go back to Home after adding
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
   };
 
   return (
