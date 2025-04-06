@@ -16,7 +16,7 @@ export default function AddTaskScreen() {
         createdAt: new Date()
       });
 
-      console.log('Task added!');
+      setTask('')
       router.push('/'); // Go back to Home after adding
     } catch (error) {
       console.error('Error adding task:', error);

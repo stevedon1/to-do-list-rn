@@ -1,38 +1,47 @@
+import { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '@/firebase';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 
 export default function HomeScreen() {
+  const [tasks, setTasks] = useState<any[]>([]);
   const router = useRouter();
-  const [tasks, setTasks] = useState<string[]>([
-    'Learn Firebase',
-    'Build Todo App',
-    'Sleep a little 😴',
-  ]);
+
+  useEffect(() => {
+    const q = query(collection(db, 'todos'), orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const tasksData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setTasks(tasksData);
+    });
+
+    // Cleanup when component unmounts
+    return () => unsubscribe();
+  }, []);
+
+  const renderItem = ({ item }: { item: any }) => (
+    <View style={styles.taskItem}>
+      <Text style={styles.taskTitle}>{item.title}</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Text style={styles.title}>My Todos</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/add-task')}
-        >
-          <Text style={styles.addButtonText}>+ Add Task</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Header */}
+      <TouchableOpacity style={styles.addButton} onPress={() => router.push('/add-task')}>
+        <Text style={styles.addButtonText}>+ Add Task</Text>
+      </TouchableOpacity>
 
-      {/* BODY */}
+      {/* Body */}
       <FlatList
         data={tasks}
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={styles.taskList}
-        renderItem={({ item }) => (
-          <View style={styles.taskItem}>
-            <Text>{item}</Text>
-          </View>
-        )}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={{ paddingVertical: 20 }}
       />
     </View>
   );
@@ -41,36 +50,29 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
     paddingHorizontal: 20,
     backgroundColor: '#fff',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
   addButton: {
-    backgroundColor: '#3b82f6', // blue
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 8,
+    backgroundColor: '#4f46e5',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 20,
   },
   addButtonText: {
     color: 'white',
-    fontWeight: '600',
-  },
-  taskList: {
-    gap: 10,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 18,
   },
   taskItem: {
-    padding: 15,
     backgroundColor: '#f3f4f6',
-    borderRadius: 10,
+    padding: 15,
+    marginVertical: 8,
+    borderRadius: 8,
+  },
+  taskTitle: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
